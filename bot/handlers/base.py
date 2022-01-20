@@ -21,7 +21,7 @@ from bot.utils import log_message
 # from telegram import InlineKeyboardMarkup
 # from telegram import ReplyKeyboardMarkup
 
-OWNER_ID = os.getenv("OWNER_ID")
+OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
 text: Dict[str, str] = dict()
 
@@ -33,7 +33,7 @@ def start(update: Update, context: CallbackContext):
 
     if update.message.chat.id == OWNER_ID:
 
-        msg = "На сегодня:\n\n‣" + "\n‣".join(list_tasks())
+        msg = "На сегодня:\n\n‣ " + "\n‣ ".join(list_tasks())
         update.message.reply_text(msg)
     else:
         update.message.reply_text("FUCK YOU")
