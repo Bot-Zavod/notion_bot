@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Dict
 
 from loguru import logger
+from telegram import InlineKeyboardButton
+from telegram import InlineKeyboardMarkup
 from telegram import Update
 from telegram.chat import Chat
 from telegram.ext import CallbackContext
@@ -17,13 +19,19 @@ from telegram.utils import helpers
 from bot.notion import list_tasks
 from bot.utils import log_message
 
-# from telegram import InlineKeyboardButton
-# from telegram import InlineKeyboardMarkup
-# from telegram import ReplyKeyboardMarkup
-
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
 text: Dict[str, str] = dict()
+
+
+def tasks_msg() -> str:
+    tasks = "На сегодня:\n\n‣ " + "\n‣ ".join(list_tasks())
+    return tasks
+
+
+refresh_markup = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text="Обновить 🔄", callback_data="refresh")]]
+)
 
 
 def start(update: Update, context: CallbackContext):
@@ -32,11 +40,22 @@ def start(update: Update, context: CallbackContext):
     log_message(update)
 
     if update.message.chat.id == OWNER_ID:
-
-        msg = "На сегодня:\n\n‣ " + "\n‣ ".join(list_tasks())
-        update.message.reply_text(msg)
+        update.message.reply_text(text=tasks_msg(), reply_markup=refresh_markup)
     else:
         update.message.reply_text("FUCK YOU")
+
+
+def refresh(update: Update, context: CallbackContext):
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise.
+    # See https://core.telegram.org/bots/api#callbackquery
+    query = update.callback_query
+    query.answer()
+
+    new_tasks = tasks_msg()
+
+    if new_tasks != query.message.text:
+        query.edit_message_text(text=new_tasks, reply_markup=refresh_markup)
 
 
 def info(update: Update, context: CallbackContext):
@@ -172,31 +191,3 @@ def error_handler(update: Update, context: CallbackContext):
                 else:
                     error_message_text = "<pre>" + err_msg_truncated
                 context.bot.send_message(chat_id=log_channel, text=error_message_text)
-
-
-# def button(update: Update, context: CallbackContext):
-#     """inline button counter
-
-#     :param update: [description]
-#     :type update: Update
-#     :param context: [description]
-#     :type context: CallbackContext
-#     """
-#     query = update.callback_query
-#     chat_id = query.message.chat.id
-
-#     # # CallbackQueries need to be answered, even if no notification to the user is needed
-#     # # Some clients may have trouble otherwise.
-#     # # See https://core.telegram.org/bots/api#callbackquery
-#     query.answer()
-
-#     check_count = context.bot_data["check_count"]
-#     if chat_id not in check_count:
-#         context.bot_data["check_count"].add(chat_id)
-
-#     button_text = str(len(context.bot_data["check_count"])) + " ✅"
-#     keyboard = [[InlineKeyboardButton(text=button_text, callback_data="check")]]
-#     reply_markup = InlineKeyboardMarkup(keyboard)
-
-#     if button_text != query.message.reply_markup.inline_keyboard[0][0]["text"]:
-#         query.edit_message_reply_markup(reply_markup=reply_markup)

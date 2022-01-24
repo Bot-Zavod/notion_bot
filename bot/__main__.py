@@ -5,10 +5,12 @@ from dotenv import load_dotenv
 from loguru import logger
 from telegram import Bot
 from telegram import ParseMode
+from telegram.ext import CallbackQueryHandler
 from telegram.ext import CommandHandler
 from telegram.ext import Defaults
 from telegram.ext import Updater
 
+from bot.handlers.base import refresh
 from bot.handlers.base import start
 from bot.set_commands import clear_bot
 from bot.set_commands import set_bot_commands
@@ -70,6 +72,7 @@ def main():
 
     # dispatcher.add_error_handler(error_handler)
     dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CallbackQueryHandler(refresh, pattern="^refresh$"))
 
     logger.debug("starting polling")
     updater.start_polling()
